@@ -2,7 +2,6 @@
 
 import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
-import { mermaid } from "@streamdown/mermaid";
 import remarkSlug from "remark-slug";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Streamdown, defaultRemarkPlugins } from "streamdown";
@@ -72,7 +71,7 @@ export function PostMarkdown({ content }: { content: string }) {
 			<Streamdown
 				className="post-markdown"
 				mode="static"
-				plugins={{ code, math, mermaid }}
+				plugins={{ code, math }}
 				components={{ a: MarkdownLink }}
 				rehypePlugins={undefined}
 				remarkPlugins={[...Object.values(defaultRemarkPlugins), remarkSlug as never]}
@@ -80,14 +79,8 @@ export function PostMarkdown({ content }: { content: string }) {
 				controls={{
 					code: true,
 					table: true,
-					mermaid: true,
 				}}
 				linkSafety={{ enabled: false }}
-				mermaid={{
-					config: {
-						theme: "neutral",
-					},
-				}}
 				allowedTags={{
 					figure: [],
 					figcaption: [],
