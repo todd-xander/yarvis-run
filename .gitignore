@@ -204,3 +204,5 @@ next-env.d.ts
 
 ### Public ###
 bundled/
+.vercel
+.env*.local
