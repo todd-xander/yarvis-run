@@ -11,4 +11,6 @@ export const CONTENT_ROUTES = {
 
 export const CONTENT_ROUTE_SEGMENTS = {
 	catalog: "catalog",
+	catalogGallery: "gallery",
+	catalogUncategorized: "uncategorized",
 } as const;

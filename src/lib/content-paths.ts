@@ -1,8 +1,6 @@
 import path from "node:path";
 import type { CatalogDimension } from "@/lib/content-types";
 
-type DimensionLike = Pick<CatalogDimension, "dir" | "postField">;
-
 export function getContentUrlPrefix(contentRoot: string): string {
 	return `/${path.basename(contentRoot)}`;
 }
@@ -31,13 +29,13 @@ export function getSectionDocumentPath(
 	return getSectionContentPath(contentRoot, section, slug, "index.md");
 }
 
-export function getDimensionRoute(dim: DimensionLike): string {
+export function getDimensionRoute(dim: Pick<CatalogDimension, "dir" | "postField">): string {
 	return dim.dir || dim.postField;
 }
 
 export function getDimensionDocumentPath(
 	contentRoot: string,
-	dim: DimensionLike,
+	dim: Pick<CatalogDimension, "dir" | "postField">,
 	itemId: string,
 ): string {
 	return getSectionContentPath(contentRoot, getDimensionRoute(dim), `${itemId}.md`);

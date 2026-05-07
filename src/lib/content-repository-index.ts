@@ -30,7 +30,7 @@ export function getDimsMap(): Record<string, DimensionItem[]> {
 			if (!dim.postField) continue;
 			const ids = collectDimensionIdsFromPosts(posts, dim.postField);
 			const lookupDir = getDimensionRoute(dim);
-			result[dim.postField] = ids.map((id) => enrichDimensionItem(id, lookupDir));
+			result[dim.postField] = ids.map((id) => enrichDimensionItem(id, dim.postField, lookupDir));
 		}
 		return result;
 	};

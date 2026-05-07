@@ -13,7 +13,7 @@ export function GiscusComments() {
 	}
 
 	return (
-		<div className="pt-4">
+		<div className="px-2 py-4">
 			<Giscus
 				repo={repo as `${string}/${string}`}
 				repoId={repoId}

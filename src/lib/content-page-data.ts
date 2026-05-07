@@ -1,21 +1,111 @@
 import "server-only";
 
 import fs from "node:fs";
+import path from "node:path";
 import type { ContentFrontmatter, DimensionPostField } from "@/lib/content-types";
 import {
 	getAdjacentPosts,
 	getDimensionPageData,
 	getPostPageData,
 } from "@/lib/content-repository";
-import { readFolderDocument, readSectionIndex, resolveCoverImage, resolveRelativeAssets } from "@/lib/folder-content";
+import type { PageViewModel } from "@/lib/page-view-model";
 import { parseContent } from "@/lib/parse-frontmatter";
-import { getContentRootIndexPath, getDimensionDocumentPath } from "@/lib/content-paths";
+import { getDimensionDocumentPath, getSectionContentPath, resolveContentUrl } from "@/lib/content-paths";
 import { CONTENT_ROOT, getSiteConfig } from "@/lib/site-config";
 
-export function getHomePageData(): ContentFrontmatter | undefined {
-	const indexPath = getContentRootIndexPath(CONTENT_ROOT);
-	if (!fs.existsSync(indexPath)) return undefined;
-	return parseContent(indexPath).frontmatter;
+function resolvePageSource(fileOrDirPath: string): {
+	markdownPath: string;
+	assetDirPath: string;
+	fallbackSlug: string;
+} | undefined {
+	if (!fs.existsSync(fileOrDirPath)) return undefined;
+
+	if (fs.statSync(fileOrDirPath).isDirectory()) {
+		const indexPath = path.join(fileOrDirPath, "index.md");
+		if (fs.existsSync(indexPath)) {
+			return {
+				markdownPath: indexPath,
+				assetDirPath: fileOrDirPath,
+				fallbackSlug: path.basename(fileOrDirPath),
+			};
+		}
+
+		const sectionIndexPath = path.join(fileOrDirPath, "_index.md");
+		if (fs.existsSync(sectionIndexPath)) {
+			return {
+				markdownPath: sectionIndexPath,
+				assetDirPath: fileOrDirPath,
+				fallbackSlug: fileOrDirPath === CONTENT_ROOT ? "home" : path.basename(fileOrDirPath),
+			};
+		}
+
+		return undefined;
+	}
+
+	const fileName = path.basename(fileOrDirPath);
+	if (!fileName.endsWith(".md")) return undefined;
+
+	if (fileName === "index.md") {
+		return {
+			markdownPath: fileOrDirPath,
+			assetDirPath: path.dirname(fileOrDirPath),
+			fallbackSlug: path.basename(path.dirname(fileOrDirPath)),
+		};
+	}
+
+	if (fileName === "_index.md") {
+		const assetDirPath = path.dirname(fileOrDirPath);
+		return {
+			markdownPath: fileOrDirPath,
+			assetDirPath,
+			fallbackSlug: assetDirPath === CONTENT_ROOT ? "home" : path.basename(assetDirPath),
+		};
+	}
+
+	return {
+		markdownPath: fileOrDirPath,
+		assetDirPath: path.dirname(fileOrDirPath),
+		fallbackSlug: path.basename(fileOrDirPath, path.extname(fileOrDirPath)),
+	};
+}
+
+function resolveRelativeAssets(body: string, assetPrefix: string): string {
+	const imgPattern = /(!\[[^\]]*\]\()([^)\s]+)((?:\s+"[^"]*")?\))/g;
+	return body.replace(imgPattern, (match, prefix, src, suffix) => {
+		if (src.startsWith("http") || src.startsWith("/")) return match;
+		return `${prefix}${assetPrefix}/${src}${suffix}`;
+	});
+}
+
+function resolvePageAsset(src: string | undefined, assetPrefix: string): string | undefined {
+	if (!src) return undefined;
+	if (src.startsWith("http") || src.startsWith("/")) return src;
+	return `${assetPrefix}/${src}`;
+}
+
+export function readPageViewModel(fileOrDirPath: string): PageViewModel | undefined {
+	const source = resolvePageSource(fileOrDirPath);
+	if (!source) return undefined;
+
+	const { frontmatter, body } = parseContent(source.markdownPath);
+	const relativeAssetDir = path.relative(CONTENT_ROOT, source.assetDirPath);
+	const assetPrefix = relativeAssetDir ? resolveContentUrl(CONTENT_ROOT, relativeAssetDir) : resolveContentUrl(CONTENT_ROOT, "");
+	const normalizedFrontmatter = {
+		...frontmatter,
+		slug: frontmatter.slug || source.fallbackSlug,
+		cover: resolvePageAsset(frontmatter.cover, assetPrefix),
+		avatar: resolvePageAsset(frontmatter.avatar, assetPrefix),
+	};
+
+	return {
+		frontmatter: normalizedFrontmatter,
+		paginationState: undefined,
+		paginationBasePath: undefined,
+		rightSlot: undefined,
+		wordCount: body.replace(/\s+/g, "").length,
+		body: resolveRelativeAssets(body, assetPrefix),
+		assetPrefix,
+	};
 }
 
 export function getPostDetailPageData(slug: string) {
@@ -27,23 +117,9 @@ export function getPostDetailPageData(slug: string) {
 	};
 }
 
-export function getSectionIndexData(section: string) {
-	return readSectionIndex(section);
-}
-
 export function getSectionDetailPageData(section: string, slug: string) {
-	const doc = readFolderDocument(section, slug);
-	if (!doc) return undefined;
-
-	return {
-		slug,
-		title: doc.frontmatter.title,
-		subtitle: doc.frontmatter.description,
-		image: resolveCoverImage(doc),
-		body: resolveRelativeAssets(doc.body, doc.assetPrefix),
-		badges: doc.frontmatter.layout === "showpiece" ? doc.frontmatter.badge || [] : [],
-		meta: doc.frontmatter.layout === "showpiece" ? doc.frontmatter.meta || [] : [],
-	};
+	return readPageViewModel(getSectionContentPath(CONTENT_ROOT, section, slug))
+		|| readPageViewModel(getSectionContentPath(CONTENT_ROOT, section, `${slug}.md`));
 }
 
 export function getDimensionPageDataWithCover(
@@ -53,12 +129,32 @@ export function getDimensionPageDataWithCover(
 	const data = getDimensionPageData(postField, itemId);
 	const dim = getSiteConfig().dimensions.find((item) => item.postField === postField);
 	const dimFilePath = dim ? getDimensionDocumentPath(CONTENT_ROOT, dim, itemId) : getDimensionDocumentPath(CONTENT_ROOT, { dir: postField, postField }, itemId);
-	const cover = fs.existsSync(dimFilePath)
-		? parseContent(dimFilePath).frontmatter.cover
-		: undefined;
+	const page = readPageViewModel(dimFilePath);
+	const fallbackPage: PageViewModel = {
+		frontmatter: {
+			layout: "feed",
+			title: data.item.name,
+			slug: itemId,
+			publishedAt: new Date(0),
+			description: data.item.description,
+			avatar: data.item.avatar,
+		} satisfies ContentFrontmatter,
+		paginationBasePath: undefined,
+		paginationState: undefined,
+		rightSlot: undefined,
+		identityAvatarTitle: data.item.name,
+		wordCount: 0,
+		body: "",
+		assetPrefix: "",
+	};
 
 	return {
 		...data,
-		cover,
+		page: page
+			? {
+				...page,
+				identityAvatarTitle: data.item.name,
+			}
+			: fallbackPage,
 	};
 }

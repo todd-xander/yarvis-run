@@ -1,39 +1,36 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { RiMoreLine, RiQuillPenLine, RiTimerLine } from "@remixicon/react";
+import { CardCover } from "@/components/card-cover";
 import { FeedCardShell } from "@/components/feed-card-shell";
 import { Pill } from "@/components/ui/pill";
 import { CONTENT_DIMENSIONS } from "@/lib/content-constants";
-import type { FeedItem } from "@/lib/content-types";
+import type { ShowpieceFeedItem } from "@/lib/content-types";
 
 export function ShowpieceCard({
 	item,
 	authorDimDir,
 }: {
-	item: FeedItem;
+	item: ShowpieceFeedItem;
 	authorDimDir?: string;
 }) {
 	return (
 		<FeedCardShell
 			author={item.dims[CONTENT_DIMENSIONS.author] || { id: "", name: "" }}
 			publishedAt={item.publishedAt}
+			location={item.location}
 			authorDimDir={authorDimDir}
 		>
 			<Link href={`/${item.id}`} className="group block">
 				<div className="flex gap-0 rounded-lg border border-border/40 bg-surface-subtle p-1 transition-colors group-hover:border-border/80 group-hover:bg-surface-hover">
-					{item.cover && (
-						<div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-l-xl">
-							<Image
-								src={item.cover}
-								alt={item.title}
-								fill
-								sizes="80px"
-								className="object-contain p-2"
-							/>
-						</div>
-					)}
+					<CardCover
+						title={item.title}
+						image={item.cover}
+						className="h-24 w-24 rounded-sm"
+						titleClassName="text-xs text-[clamp(0.8rem,1vw,2rem)]"
+						variant="compact"
+					/>
 					<div className="min-w-0 flex-1 flex flex-col ml-2 divide-y divide-border/30">
 						<div className="grow p-2">
 							<p className="line-clamp-1 text-sm font-semibold leading-5">
@@ -46,25 +43,27 @@ export function ShowpieceCard({
 							)}
 						</div>
 						<div className="flex justify-end px-3 py-2 text-xs text-muted">
-							{item.dims[CONTENT_DIMENSIONS.category]?.name}
+							{item.sectionLabel}
 						</div>
 					</div>
 				</div>
 			</Link>
 
 			<div className="mt-4 flex h-9 items-center justify-between text-sm leading-5 text-muted">
-				<div className="flex items-center gap-6">
+				<div className="flex items-center gap-2">
 					<Pill
 						variant="action"
+						ariaLabel="文章字数"
 						icon={<RiQuillPenLine className="size-5" />}
 					>
-						{item.wordCount}
+						{item.wordCount} 字
 					</Pill>
 					<Pill
 						variant="action"
+						ariaLabel="阅读时长"
 						icon={<RiTimerLine className="size-5" />}
 					>
-						{item.readingMinutes}分钟
+						{item.readingMinutes} 分钟
 					</Pill>
 				</div>
 				<Pill

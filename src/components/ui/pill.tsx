@@ -1,16 +1,15 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
 
 type PillVariant = "topic" | "outline" | "soft" | "action";
 
-type PillProps = {
+type PillProps = PropsWithChildren<{
 	variant: PillVariant;
-	children?: ReactNode;
 	icon?: ReactNode;
 	href?: string;
 	ariaLabel?: string;
 	className?: string;
-};
+}>;
 
 const baseClasses =
 	"inline-flex items-center rounded-full transition-colors duration-200";
@@ -21,21 +20,14 @@ const variantClasses: Record<PillVariant, string> = {
 	outline: "border border-border px-3 py-1 text-xs",
 	soft: "bg-surface-soft px-3 py-0.5 text-xs",
 	action:
-		"h-9 gap-1 px-3 text-sm leading-5 text-muted hover:bg-interactive-hover",
+		"h-9 gap-1 px-3 text-sm leading-5 cursor-pointer hover:bg-interactive-hover",
 };
 
 function getPillClassName(
 	variant: PillVariant,
-	iconOnly: boolean,
 	className: string,
 ) {
-	const iconOnlyClasses = iconOnly
-		? variant === "action"
-			? "px-2 justify-center"
-			: "justify-center"
-		: "";
-
-	return `${baseClasses} ${variantClasses[variant]} ${iconOnlyClasses} ${className}`.trim();
+	return `${baseClasses} ${variantClasses[variant]} ${className}`.trim();
 }
 
 export function Pill({
@@ -46,7 +38,6 @@ export function Pill({
 	ariaLabel,
 	className = "",
 }: PillProps) {
-	const iconOnly = !children;
 	const content = (
 		<>
 			{icon ? <span className="inline-flex">{icon}</span> : null}
@@ -54,21 +45,14 @@ export function Pill({
 		</>
 	);
 
-	if (href) {
-		return (
-			<Link
-				href={href}
-				aria-label={ariaLabel}
-				className={getPillClassName(variant, iconOnly, className)}
-			>
-				{content}
-			</Link>
-		);
-	}
-
 	return (
-		<span className={getPillClassName(variant, iconOnly, className)}>
+		<Link
+			href={href || "#"}
+			aria-label={ariaLabel}
+			title={ariaLabel}
+			className={getPillClassName(variant, className)}
+		>
 			{content}
-		</span>
+		</Link>
 	);
 }

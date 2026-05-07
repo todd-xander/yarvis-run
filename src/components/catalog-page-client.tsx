@@ -4,12 +4,18 @@ import Link from "next/link";
 import { AuthorAvatar } from "@/components/ui/author-avatar";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
 import { Pill } from "@/components/ui/pill";
-import type { CatalogDimension, DimensionItemWithPostCount } from "@/lib/content-types";
+import type { CatalogItemData, CatalogSectionData, CatalogViewModel } from "@/lib/content-types";
 
 type CatalogPageClientProps = {
-	dimensions: CatalogDimension[];
-	dimItems: Record<string, DimensionItemWithPostCount[]>;
+	catalog: CatalogViewModel;
 };
+
+type DimItemListProps = Pick<CatalogSectionData, "basePath" | "items" | "display" | "title">;
+
+function getCatalogItemHref(basePath: string, item: CatalogItemData) {
+	if (item.href) return item.href;
+	return `/${basePath}/${item.id}`;
+}
 
 function SectionHeader({ label }: { label: string }) {
 	return (
@@ -21,20 +27,10 @@ function SectionHeader({ label }: { label: string }) {
 	);
 }
 
-function DimItemList({
-	basePath,
-	items,
-	display,
-	emptyLabel,
-}: {
-	basePath: string;
-	items: DimensionItemWithPostCount[];
-	display: "list" | "pill";
-	emptyLabel: string;
-}) {
+function DimItemList({ basePath, items, display, title }: DimItemListProps) {
 	if (display === "pill") {
 		if (items.length === 0) {
-			return <EmptyStateCard>{emptyLabel} 暂无内容</EmptyStateCard>;
+			return <EmptyStateCard>{title} 暂无内容</EmptyStateCard>;
 		}
 		return (
 			<div className="flex flex-wrap gap-2 px-2 py-4">
@@ -42,7 +38,7 @@ function DimItemList({
 					<Pill
 						key={item.id}
 						variant="topic"
-						href={`/${basePath}/${item.id}`}
+						href={getCatalogItemHref(basePath, item)}
 						icon={
 							<span className="relative inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-jike-blue">
 								<span className="size-2 rounded-full bg-jike-blue-soft" />
@@ -57,7 +53,7 @@ function DimItemList({
 	}
 
 	if (items.length === 0) {
-		return <EmptyStateCard>{emptyLabel} 暂无内容</EmptyStateCard>;
+		return <EmptyStateCard>{title} 暂无内容</EmptyStateCard>;
 	}
 
 	return (
@@ -65,10 +61,10 @@ function DimItemList({
 			{items.map((item) => (
 				<Link
 					key={item.id}
-					href={`/${basePath}/${item.id}`}
+					href={getCatalogItemHref(basePath, item)}
 					className="flex items-center gap-3 px-2 py-3 border-border/50"
 				>
-					<AuthorAvatar author={item} size="md" shape="square" />
+					<AuthorAvatar author={{ title: item.name, avatar: item.avatar }} size="md" shape="square" />
 					<div className="min-w-0 flex-1">
 						<p className="text-sm font-semibold leading-5">{item.name}</p>
 						<p className="text-xs leading-4 text-muted">{item.description}</p>
@@ -82,8 +78,8 @@ function DimItemList({
 	);
 }
 
-export function CatalogPageClient({ dimensions, dimItems }: CatalogPageClientProps) {
-	if (dimensions.length === 0) {
+export function CatalogPageClient({ catalog }: CatalogPageClientProps) {
+	if (catalog.sections.length === 0) {
 		return (
 			<section className="layout-content">
 				<div className="pt-4">
@@ -96,14 +92,14 @@ export function CatalogPageClient({ dimensions, dimItems }: CatalogPageClientPro
 	return (
 		<section className="layout-content">
 			<div className="space-y-6 pt-4">
-				{dimensions.map((dim) => (
-					<div key={dim.postField}>
-						<SectionHeader label={dim.label} />
+				{catalog.sections.map((section) => (
+					<div key={section.key}>
+						<SectionHeader label={section.title} />
 						<DimItemList
-							basePath={dim.dir || dim.postField}
-							items={dimItems[dim.postField] || []}
-							display={dim.display}
-							emptyLabel={dim.label}
+							basePath={section.basePath}
+							title={section.title}
+							display={section.display}
+							items={section.items}
 						/>
 					</div>
 				))}

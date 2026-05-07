@@ -41,7 +41,7 @@ function NavItemButton({
 		<Link
 			href={item.href}
 			aria-label={item.label}
-			className={active ? "active" : ""}
+			className={active ? "active rounded-xl" : "rounded-xl"}
 			title={item.label}
 		>
 			<div
@@ -117,7 +117,7 @@ export function SidebarNav({
 				href="/"
 				className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-bg-jike-yellow"
 			>
-				<GradientShadowText fontSize="text-3xl">Y</GradientShadowText>
+				<GradientShadowText fontSize="text-2xl">Y</GradientShadowText>
 			</Link>
 
 			<div className="flex flex-1 flex-col items-center mt-16">

@@ -15,6 +15,8 @@ export function AuthorHoverCard({
 	onMouseLeave?: () => void;
 	dimDir?: string;
 }) {
+	const profileHref = dimDir && dimItem.id ? `/${dimDir}/${dimItem.id}` : undefined;
+
 	return (
 		<div
 			className={`absolute left-0 top-11 z-20 w-72 rounded-xl border border-border bg-card p-4 shadow-md transition ${visible
@@ -27,14 +29,16 @@ export function AuthorHoverCard({
 			onMouseLeave={onMouseLeave}
 		>
 			<div className="flex items-center gap-3">
-				<AuthorAvatar author={dimItem} size="md" shape="circle" />
+				<AuthorAvatar author={{ title: dimItem.name, avatar: dimItem.avatar }} size="md" shape="circle" />
 				<div className="flex min-w-0 flex-1 flex-col justify-center self-stretch">
 					<p className="truncate text-sm font-semibold leading-5">{dimItem.name}</p>
 					<p className="line-clamp-2 text-xs leading-5 text-muted">{dimItem.description}</p>
 				</div>
-				<Pill variant="outline" href={`/${dimDir}/${dimItem.id}`} className="shrink-0">
-					进入主页
-				</Pill>
+				{profileHref && (
+					<Pill variant="outline" href={profileHref} className="shrink-0">
+						进入主页
+					</Pill>
+				)}
 			</div>
 		</div>
 	);

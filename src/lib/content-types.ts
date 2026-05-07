@@ -54,58 +54,47 @@ export type SortConfig = {
 	order: "ascend" | "descend";
 };
 
-export type LayoutType = "post" | "feed" | "list" | "card" | "catalog" | "showpiece";
+export type PaginationConfig = {
+	pageSize: number;
+};
 
-type BaseFrontmatter = {
+export type ListlikeLayout = "feed" | "list" | "card" | "catalog";
+
+export type DataLayout = "post" | "showpiece";
+
+export type LayoutType = ListlikeLayout | DataLayout;
+
+export type BaseFrontmatter = {
 	title: string;
 	slug: string;
 	publishedAt: Date;
 	cover?: string;
 	description?: string;
+	avatar?: string;
+	location?: string;
 	tags?: string[];
 };
 
-export type FeedFrontmatter = BaseFrontmatter & {
-	layout: "feed";
+export type ListlikeFrontmatter = BaseFrontmatter & {
+	layout: ListlikeLayout;
 	sort?: SortConfig;
-};
-
-export type ListFrontmatter = BaseFrontmatter & {
-	layout: "list";
-	sort?: SortConfig;
-};
-
-export type CardFrontmatter = BaseFrontmatter & {
-	layout: "card";
-	sort?: SortConfig;
-};
-
-export type CatalogFrontmatter = BaseFrontmatter & {
-	layout: "catalog";
+	pagination?: PaginationConfig;
 	dimensions?: CatalogDimension[];
 };
 
-export type PostFrontmatter = BaseFrontmatter & {
-	layout: "post";
-	avatar?: string;
+export type DataFrontmatter = BaseFrontmatter & {
+	layout: DataLayout;
 	author?: string;
 	category?: string;
-};
-
-export type ShowpieceFrontmatter = BaseFrontmatter & {
-	layout: "showpiece";
-	description?: string;
 	badge?: Badge[];
 	meta?: MetaItem[];
 };
 
 export type ContentFrontmatter =
-	| FeedFrontmatter
-	| ListFrontmatter
-	| CardFrontmatter
-	| CatalogFrontmatter
-	| PostFrontmatter
-	| ShowpieceFrontmatter;
+	| ListlikeFrontmatter
+	| DataFrontmatter;
+
+export type AvatarAuthor = Pick<BaseFrontmatter, "title" | "avatar">;
 
 export type DimensionItem = {
 	id: string;
@@ -118,16 +107,49 @@ export type DimensionItemWithPostCount = DimensionItem & {
 	postCount: number;
 };
 
-export type Post = PostFrontmatter & {
+export type CatalogItemData = DimensionItemWithPostCount & {
+	href?: string;
+};
+
+export type PostRouteEntry = {
+	slug: string;
+	section: string;
+};
+
+export type CatalogSectionData = {
+	key: string;
+	basePath: string;
+	title: string;
+	display: CatalogDimension["display"];
+	items: CatalogItemData[];
+};
+
+export type CatalogViewModel = {
+	sections: CatalogSectionData[];
+};
+
+export type Post = BaseFrontmatter & {
+	layout: "post";
+	author?: string;
+	category?: string;
 	id: string;
 	content: string;
 	wordCount: number;
 	readingMinutes: number;
 	images: PostImage[];
-	dims?: Record<string, DimensionItem>;
 };
 
-export type FeedItem = Post & {
-	type: "post" | "showpiece";
+export type ResolvedPost = Post & {
 	dims: Record<string, DimensionItem>;
+};
+
+export type ShowpieceFeedItem = ResolvedPost & {
+	type: "showpiece";
+	sectionLabel?: string;
+};
+
+export type FeedItem = (ResolvedPost & { type: "post" }) | ShowpieceFeedItem;
+
+export type SearchablePost = ResolvedPost & {
+	searchText: string;
 };

@@ -2,7 +2,7 @@ import "server-only";
 
 import path from "node:path";
 import fs from "node:fs";
-import type { Post, PostImage } from "@/lib/content-types";
+import type { DataFrontmatter, Post, PostImage } from "@/lib/content-types";
 import { getSectionContentPath, resolveContentUrl } from "@/lib/content-paths";
 import { parseContent } from "@/lib/parse-frontmatter";
 import { CONTENT_ROOT } from "@/lib/site-config";
@@ -41,10 +41,16 @@ function resolveAssetPrefix(filePath: string): string | undefined {
 	return undefined;
 }
 
+function resolveAssetPath(src: string | undefined, assetPrefix: string | undefined): string | undefined {
+	if (!src) return undefined;
+	if (!assetPrefix || src.startsWith("http") || src.startsWith("/")) return src;
+	return `${assetPrefix}/${src}`;
+}
+
 function toPost(filePath: string, section: string): Post | undefined {
 	const { frontmatter, body } = parseContent(filePath);
 	if (frontmatter.layout !== "post") return undefined;
-	const fm = frontmatter;
+	const fm = frontmatter as DataFrontmatter & { layout: "post" };
 	const wordCount = countWords(body);
 	const assetPrefix = resolveAssetPrefix(filePath);
 	const resolvedBody = assetPrefix ? resolveRelativeImagePaths(body, assetPrefix) : body;
@@ -52,6 +58,8 @@ function toPost(filePath: string, section: string): Post | undefined {
 	return {
 		id: `${section}/${fm.slug}`,
 		...fm,
+		cover: resolveAssetPath(fm.cover, assetPrefix),
+		avatar: resolveAssetPath(fm.avatar, assetPrefix),
 		content: resolvedBody,
 		wordCount,
 		readingMinutes: Math.max(1, Math.ceil(wordCount / 300)),

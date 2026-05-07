@@ -6,11 +6,10 @@ import { PostImageGrid } from "@/components/post-image-grid";
 import { FeedCardShell } from "@/components/feed-card-shell";
 import { Pill } from "@/components/ui/pill";
 import { CONTENT_DIMENSIONS } from "@/lib/content-constants";
-import type { FeedItem, Post } from "@/lib/content-types";
-import type { DimensionItem } from "@/lib/content-types";
+import type { DimensionItem, ResolvedPost } from "@/lib/content-types";
 
 type PostCardProps = {
-	post: Post | FeedItem;
+	post: ResolvedPost;
 	dimRoutes?: Record<string, string>;
 };
 
@@ -18,17 +17,19 @@ export function PostCard({
 	post,
 	dimRoutes,
 }: PostCardProps) {
-	const dims = post.dims || {};
+	const dims = post.dims;
 	const authorItem: DimensionItem = dims[CONTENT_DIMENSIONS.author] || { id: "", name: "" };
 	const categoryItem: DimensionItem = dims[CONTENT_DIMENSIONS.category] || { id: "", name: "" };
 	const authorDimDir = dimRoutes?.[CONTENT_DIMENSIONS.author] || "";
 	const categoryDimDir = dimRoutes?.[CONTENT_DIMENSIONS.category] || "";
+	const categoryHref = categoryDimDir && categoryItem.id ? `/${categoryDimDir}/${categoryItem.id}` : undefined;
 	const postSection = post.id.split("/")[0];
 
 	return (
 		<FeedCardShell
 			author={authorItem}
 			publishedAt={post.publishedAt}
+			location={post.location}
 			authorDimDir={authorDimDir}
 		>
 			<div className="flex gap-4">
@@ -54,33 +55,37 @@ export function PostCard({
 
 			<PostImageGrid images={post.images} />
 
-			<div className="mt-3">
-				<Pill
-					variant="topic"
-					href={categoryDimDir ? `/${categoryDimDir}/${categoryItem.id}` : "#"}
-					icon={
-						<span className="relative inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-jike-blue">
-							<span className="size-2 rounded-full bg-jike-blue-soft" />
-						</span>
-					}
-				>
-					{categoryItem.name}
-				</Pill>
-			</div>
+			{categoryItem.name && (
+				<div className="mt-3">
+					<Pill
+						variant="topic"
+						href={categoryHref}
+						icon={
+							<span className="relative inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-jike-blue">
+								<span className="size-2 rounded-full bg-jike-blue-soft" />
+							</span>
+						}
+					>
+						{categoryItem.name}
+					</Pill>
+				</div>
+			)}
 
 			<div className="mt-4 flex h-9 items-center justify-between text-sm leading-5 text-muted">
-				<div className="flex items-center gap-6">
+				<div className="flex items-center gap-2">
 					<Pill
 						variant="action"
+						ariaLabel="文章字数"
 						icon={<RiQuillPenLine className="size-5" />}
 					>
-						{post.wordCount}
+						{post.wordCount} 字
 					</Pill>
 					<Pill
 						variant="action"
+						ariaLabel="阅读时长"
 						icon={<RiTimerLine className="size-5" />}
 					>
-						{post.readingMinutes}分钟
+						{post.readingMinutes} 分钟
 					</Pill>
 				</div>
 				<Pill

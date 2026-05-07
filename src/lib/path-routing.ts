@@ -1,21 +1,23 @@
-import type { CatalogDimension, DimensionPostField } from "@/lib/content-types";
+import type { CatalogDimension } from "@/lib/content-types";
 import { CONTENT_ROUTE_SEGMENTS } from "@/lib/content-constants";
 import { getDimensionRoute } from "@/lib/content-paths";
 import { listDimensionItemIds, listPostSlugs } from "@/lib/content-repository";
 import { listFolderDocuments } from "@/lib/folder-content";
-import { discoverAllSections, getSiteConfig, type SectionMeta } from "@/lib/site-config";
+import { discoverAllSections, getSiteConfig, type SectionEntry } from "@/lib/site-config";
 
 export type PathPageTarget =
 	| { kind: "home" }
-	| { kind: "section-index"; section: SectionMeta }
-	| { kind: "section-detail"; section: string; id: string }
+	| { kind: "section-index"; section: SectionEntry }
+	| { kind: "section-detail"; section: SectionEntry; id: string }
 	| { kind: "post-detail"; slug: string }
 	| { kind: "dimension-index"; dimension: CatalogDimension }
-	| { kind: "dimension-detail"; postField: DimensionPostField; itemId: string }
+	| { kind: "dimension-detail"; dimension: CatalogDimension; itemId: string }
 	| { kind: "catalog" }
+	| { kind: "catalog-gallery" }
+	| { kind: "catalog-uncategorized" }
 	| { kind: "not-found" };
 
-function getSectionIndexMap(): Map<string, SectionMeta> {
+function getSectionIndexMap(): Map<string, SectionEntry> {
 	return new Map(discoverAllSections().map((section) => [section.route, section]));
 }
 
@@ -36,24 +38,45 @@ export function resolvePathTarget(urlParts: string[]): PathPageTarget {
 
 	if (section) {
 		if (urlParts.length === 1) return { kind: "section-index", section };
-		if (urlParts.length === 2 && section.layout === "card") {
-			return { kind: "section-detail", section: section.name, id: second };
-		}
-		if (urlParts.length === 2 && (section.layout === "list" || section.layout === "feed")) {
-			return { kind: "post-detail", slug: second };
+
+		if (urlParts.length === 2) {
+			const sectionDocument = listFolderDocuments(section.slug)
+				.find((document) => document.frontmatter.slug === second);
+
+			if (sectionDocument?.frontmatter.layout === "showpiece") {
+				return { kind: "section-detail", section, id: second };
+			}
+
+			if (sectionDocument?.frontmatter.layout === "post") {
+				return { kind: "post-detail", slug: second };
+			}
+
+			if (section.layout === "card") {
+				return { kind: "section-detail", section, id: second };
+			}
+
+			if (section.layout === "list" || section.layout === "feed") {
+				return { kind: "post-detail", slug: second };
+			}
 		}
 	}
 
 	const dimension = findDimensionByRoute(first);
 	if (dimension) {
 		if (urlParts.length === 1) return { kind: "dimension-index", dimension };
-		if (urlParts.length === 2 && dimension.postField) {
-			return { kind: "dimension-detail", postField: dimension.postField, itemId: second };
+		if (urlParts.length === 2) {
+			return { kind: "dimension-detail", dimension, itemId: second };
 		}
 	}
 
-	if (first === CONTENT_ROUTE_SEGMENTS.catalog && urlParts.length === 1) {
-		return { kind: "catalog" };
+	if (first === CONTENT_ROUTE_SEGMENTS.catalog) {
+		if (urlParts.length === 1) return { kind: "catalog" };
+		if (urlParts.length === 2 && second === CONTENT_ROUTE_SEGMENTS.catalogGallery) {
+			return { kind: "catalog-gallery" };
+		}
+		if (urlParts.length === 2 && second === CONTENT_ROUTE_SEGMENTS.catalogUncategorized) {
+			return { kind: "catalog-uncategorized" };
+		}
 	}
 
 	return { kind: "not-found" };
@@ -70,7 +93,7 @@ export function generatePathStaticParams() {
 	for (const [, meta] of sectionMap) {
 		params.push({ path: [meta.route] });
 		if (meta.layout === "card") {
-			for (const slug of listFolderDocuments(meta.name).map((document) => document.slug)) {
+			for (const slug of listFolderDocuments(meta.slug).map((document) => document.frontmatter.slug)) {
 				params.push({ path: [meta.route, slug] });
 			}
 		}
@@ -86,6 +109,8 @@ export function generatePathStaticParams() {
 	}
 
 	params.push({ path: [CONTENT_ROUTE_SEGMENTS.catalog] });
+	params.push({ path: [CONTENT_ROUTE_SEGMENTS.catalog, CONTENT_ROUTE_SEGMENTS.catalogGallery] });
+	params.push({ path: [CONTENT_ROUTE_SEGMENTS.catalog, CONTENT_ROUTE_SEGMENTS.catalogUncategorized] });
 
 	return params;
 }

@@ -1,4 +1,9 @@
+import { CONTENT_DIMENSIONS } from "@/lib/content-constants";
 import type { DimensionItem, Post } from "@/lib/content-types";
+import {
+	ANONYMOUS_AUTHOR,
+	normalizeDimensionValue,
+} from "@/lib/content-repository-scan";
 
 export function resolvePostsWithRelations(
 	sourcePosts: Post[],
@@ -9,11 +14,14 @@ export function resolvePostsWithRelations(
 		const dims: Record<string, DimensionItem> = {};
 		for (const field of dimFields) {
 			const items = dimsMap[field];
-			const rawValue = (post as Record<string, unknown>)[field];
-			if (typeof rawValue === "string" && items) {
-				const matched = items.find((item) => item.id === rawValue);
+			const normalizedValue = normalizeDimensionValue(post, field);
+			if (normalizedValue && items) {
+				const matched = items.find((item) => item.id === normalizedValue);
 				if (matched) dims[field] = matched;
 			}
+		}
+		if (!dims[CONTENT_DIMENSIONS.author]) {
+			dims[CONTENT_DIMENSIONS.author] = ANONYMOUS_AUTHOR;
 		}
 		return { ...post, dims };
 	});

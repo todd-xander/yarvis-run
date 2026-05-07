@@ -14,6 +14,9 @@
 	--muted: #808080;
 	--muted-foreground: #808080;
 	--muted-soft: #bfbfbf;
+	--sidebar: #fafafa;
+	--sidebar-foreground: #333333;
+	--sidebar-border: #dbdbdb;
 	--border: #dbdbdb;
 	--input: #dbdbdb;
 	--primary: #333333;
@@ -30,6 +33,8 @@
 	--solid-white: #ffffff;
 	--solid-ink: #1f2937;
 	--layout-content-max-width: 42rem;
+	--font-geist-sans: "SF Pro Text", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, Helvetica, sans-serif;
+	--font-geist-mono: "SF Mono", "JetBrains Mono", "Cascadia Code", "Fira Code", "Source Code Pro", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
 @theme inline {
@@ -42,6 +47,9 @@
 	--color-muted: var(--muted);
 	--color-muted-foreground: var(--muted-foreground);
 	--color-muted-soft: var(--muted-soft);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-border: var(--sidebar-border);
 	--color-border: var(--border);
 	--color-input: var(--input);
 	--color-primary: var(--primary);
@@ -73,6 +81,9 @@
 	--muted: #bfbfbf;
 	--muted-foreground: #bfbfbf;
 	--muted-soft: #808080;
+	--sidebar: #202020;
+	--sidebar-foreground: #dbdbdb;
+	--sidebar-border: #333333;
 	--border: #333333;
 	--input: #333333;
 	--primary: #dbdbdb;
@@ -91,6 +102,9 @@
 	--muted: #808080;
 	--muted-foreground: #808080;
 	--muted-soft: #bfbfbf;
+	--sidebar: #fafafa;
+	--sidebar-foreground: #333333;
+	--sidebar-border: #dbdbdb;
 	--border: #dbdbdb;
 	--input: #dbdbdb;
 	--primary: #333333;
@@ -116,6 +130,11 @@ button {
 	transition: all 0.18s ease;
 }
 
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+	outline: 2px solid var(--jike-yellow);
+	outline-offset: 2px;
+}
+
 .layout-content {
 	margin-inline: auto;
 	width: 100%;
@@ -127,8 +146,17 @@ button {
 }
 
 .post-markdown a {
-	cursor: pointer;
-	text-decoration: underline;
+	text-decoration: underline wavy var(--jike-blue-soft);
+}
+
+.post-markdown [data-streamdown="superscript"] a,
+.post-markdown .data-footnote-backref {
+	text-decoration: none;
+	color: var(--jike-blue);
+}
+
+.post-markdown [data-streamdown="inline-code"] {
+	background-color: color-mix(in srgb, var(--jike-blue) 10%, transparent);
 }
 
 .post-markdown [id] {
@@ -136,7 +164,6 @@ button {
 }
 
 .post-markdown img {
-	border-radius: 1rem;
 	cursor: pointer;
 }
 

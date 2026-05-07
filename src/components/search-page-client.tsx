@@ -4,23 +4,28 @@ import { RiSearchLine } from "@remixicon/react";
 import { useMemo, useState } from "react";
 import { PostCard } from "@/components/post-card";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
-import type { Post } from "@/lib/content-types";
+import { Pill } from "@/components/ui/pill";
+import type { DimensionItemWithPostCount, SearchablePost } from "@/lib/content-types";
 
 type SearchPageClientProps = {
-	posts: (Post & { searchText: string; dims: Record<string, import("@/lib/content-types").DimensionItem> })[];
+	posts: SearchablePost[];
+	categoryItems: DimensionItemWithPostCount[];
+	categoryBasePath: string;
 	dimRoutes?: Record<string, string>;
 };
 
 export function SearchPageClient({
 	posts,
+	categoryItems,
+	categoryBasePath,
 	dimRoutes,
 }: SearchPageClientProps) {
 	const [query, setQuery] = useState("");
+	const trimmedQuery = query.trim().toLowerCase();
 	const results = useMemo(() => {
-		const trimmed = query.trim().toLowerCase();
-		if (!trimmed) return posts;
-		return posts.filter((post) => post.searchText.includes(trimmed));
-	}, [posts, query]);
+		if (!trimmedQuery) return [];
+		return posts.filter((post) => post.searchText.includes(trimmedQuery));
+	}, [posts, trimmedQuery]);
 
 	return (
 		<div className="space-y-3 mt-5">
@@ -36,7 +41,28 @@ export function SearchPageClient({
 				</div>
 			</div>
 
-			{results.length === 0 ? (
+			{!trimmedQuery ? (
+				categoryItems.length > 0 ? (
+					<div className="flex flex-wrap gap-2 px-3 py-1">
+						{categoryItems.map((item) => (
+							<Pill
+								key={item.id}
+								variant="topic"
+								href={`/${categoryBasePath}/${item.id}`}
+								icon={
+									<span className="relative inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-jike-blue">
+										<span className="size-2 rounded-full bg-jike-blue-soft" />
+									</span>
+								}
+							>
+								{item.name}
+							</Pill>
+						))}
+					</div>
+				) : (
+					<EmptyStateCard>暂无分类内容</EmptyStateCard>
+				)
+			) : results.length === 0 ? (
 				<EmptyStateCard>没有找到相关文章，请尝试其他关键词</EmptyStateCard>
 			) : (
 				results.map((item) => (

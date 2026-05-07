@@ -203,9 +203,4 @@ dist
 next-env.d.ts
 
 ### Public ###
-public/
-bundled/77d9faebf7af9e421806970ce10a58e9d83116d7-resvg.wasm?module
-bundled/ef4866ecae192fd87727067cf2c0c0cf9fb8b020-yoga.wasm?module
-bundled/README.md
-bundled/worker.js
-bundled/worker.js.map
+bundled/

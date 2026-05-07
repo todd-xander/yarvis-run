@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { RiMapPin2Fill } from "@remixicon/react";
+import type { PropsWithChildren, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { AuthorHoverCard } from "@/components/author-hover-card";
 import { AuthorAvatar } from "@/components/ui/author-avatar";
@@ -55,23 +56,24 @@ function useHoverDisclosure(delayMs = 120) {
 	};
 }
 
-type FeedCardShellProps = {
+type FeedCardShellProps = PropsWithChildren<{
 	author: DimensionItem;
 	publishedAt: Date;
+	location?: string;
 	authorDimDir?: string;
 	headerRight?: ReactNode;
-	children: ReactNode;
-};
+}>;
 
 export function FeedCardShell({
 	author,
 	publishedAt,
+	location,
 	authorDimDir,
 	headerRight,
 	children,
 }: FeedCardShellProps) {
 	const { open, show, hide } = useHoverDisclosure();
-	const authorHref = authorDimDir ? `/${authorDimDir}/${author.id}` : undefined;
+	const authorHref = authorDimDir && author.id ? `/${authorDimDir}/${author.id}` : undefined;
 
 	return (
 		<article className="shadow-divider-bottom">
@@ -79,7 +81,7 @@ export function FeedCardShell({
 				<div className="relative flex gap-2.5">
 					<div className="flex shrink-0 items-start">
 						<AuthorAvatar
-							author={author}
+							author={{ title: author.name, avatar: author.avatar }}
 							size="md"
 							shape="circle"
 							href={authorHref}
@@ -108,21 +110,29 @@ export function FeedCardShell({
 										{author.name}
 									</span>
 								)}
-								<div className="text-xs leading-5 text-muted">
-									{formatDate(publishedAt)}
+								<div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-muted-soft">
+									<span>{formatDate(publishedAt)}</span>
+									{location && (
+										<span className="inline-flex items-center gap-1">
+											<RiMapPin2Fill className="size-3.5" />
+											<span>{location}</span>
+										</span>
+									)}
 								</div>
 							</div>
 							{headerRight}
 						</header>
 						{children}
 					</div>
-					<AuthorHoverCard
-						dimItem={author}
-						visible={open}
-						onMouseEnter={show}
-						onMouseLeave={hide}
-						dimDir={authorDimDir}
-					/>
+					{authorHref && (
+						<AuthorHoverCard
+							dimItem={author}
+							visible={open}
+							onMouseEnter={show}
+							onMouseLeave={hide}
+							dimDir={authorDimDir}
+						/>
+					)}
 				</div>
 			</div>
 		</article>

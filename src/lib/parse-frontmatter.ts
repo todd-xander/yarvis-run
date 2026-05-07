@@ -10,6 +10,7 @@ import type {
 	MenuGroup,
 	MenuItem,
 	MetaItem,
+	PaginationConfig,
 	SortConfig,
 } from "@/lib/content-types";
 
@@ -88,6 +89,19 @@ function parseSortConfig(raw: unknown): SortConfig | undefined {
 		key,
 		order: candidate.order === "ascend" ? "ascend" : "descend",
 	};
+}
+
+function parsePaginationConfig(raw: unknown): PaginationConfig | undefined {
+	if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) {
+		return { pageSize: Math.floor(raw) };
+	}
+	if (!raw || typeof raw !== "object") return undefined;
+	const candidate = raw as { pageSize?: unknown };
+	const pageSize = typeof candidate.pageSize === "number" && Number.isFinite(candidate.pageSize)
+		? Math.floor(candidate.pageSize)
+		: undefined;
+	if (!pageSize || pageSize <= 0) return undefined;
+	return { pageSize };
 }
 
 function parseCatalogDimension(raw: unknown): CatalogDimension | undefined {
@@ -181,6 +195,7 @@ export function parseContent(filePath: string): { frontmatter: ContentFrontmatte
 		description: getString(raw.description),
 		tags: Array.isArray(raw.tags) ? raw.tags as string[] : undefined,
 		avatar: getString(raw.avatar),
+		location: getString(raw.location),
 		coverGradient: getString(raw.coverGradient),
 		route: getString(raw.route),
 	};
@@ -189,16 +204,22 @@ export function parseContent(filePath: string): { frontmatter: ContentFrontmatte
 
 	switch (layout) {
 		case "feed":
-			frontmatter = { ...base, layout: "feed", sort: parseSortConfig(raw.sort) };
+			frontmatter = { ...base, layout: "feed", sort: parseSortConfig(raw.sort), pagination: parsePaginationConfig(raw.pagination) };
 			break;
 		case "list":
-			frontmatter = { ...base, layout: "list", sort: parseSortConfig(raw.sort) };
+			frontmatter = { ...base, layout: "list", sort: parseSortConfig(raw.sort), pagination: parsePaginationConfig(raw.pagination) };
 			break;
 		case "card":
-			frontmatter = { ...base, layout: "card", sort: parseSortConfig(raw.sort) };
+			frontmatter = { ...base, layout: "card", sort: parseSortConfig(raw.sort), pagination: parsePaginationConfig(raw.pagination) };
 			break;
 		case "catalog":
-			frontmatter = { ...base, layout: "catalog", dimensions: normalizeDimensions(raw.dimensions) };
+			frontmatter = {
+				...base,
+				layout: "catalog",
+				sort: parseSortConfig(raw.sort),
+				pagination: parsePaginationConfig(raw.pagination),
+				dimensions: normalizeDimensions(raw.dimensions),
+			};
 			break;
 		case "showpiece": {
 			const badges = Array.isArray(raw.badge)
@@ -211,6 +232,8 @@ export function parseContent(filePath: string): { frontmatter: ContentFrontmatte
 				...base,
 				layout: "showpiece",
 				description: getString(raw.description),
+				author: getString(raw.author),
+				category: getString(raw.category),
 				badge: badges?.length ? badges : undefined,
 				meta: meta?.length ? meta : undefined,
 			};

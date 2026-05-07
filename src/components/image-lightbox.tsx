@@ -3,11 +3,13 @@
 import {
 	RiArrowLeftLine,
 	RiArrowRightLine,
+	RiArticleLine,
 	RiCloseLargeLine,
 	RiImageCircleLine,
 	RiRefreshLine,
 } from "@remixicon/react";
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { PostImage } from "@/lib/content-types";
@@ -17,6 +19,8 @@ type ImageLightboxProps = {
 	activeIndex: number | null;
 	onClose: () => void;
 	onSelect: (index: number) => void;
+	getActionHref?: (index: number) => string | undefined;
+	actionLabel?: string;
 };
 
 function getWrappedIndex(index: number, length: number) {
@@ -28,6 +32,8 @@ export function ImageLightbox({
 	activeIndex,
 	onClose,
 	onSelect,
+	getActionHref,
+	actionLabel = "转到文章",
 }: ImageLightboxProps) {
 	const [visibleIndex, setVisibleIndex] = useState<number | null>(null);
 	const [transitionActive, setTransitionActive] = useState(false);
@@ -130,6 +136,7 @@ export function ImageLightbox({
 	const currentIndex = getWrappedIndex(activeIndex, images.length);
 	const currentImage = images[currentIndex];
 	const visibleImage = visibleIndex === null ? null : images[visibleIndex];
+	const actionHref = getActionHref?.(currentIndex);
 
 	return createPortal(
 		<div
@@ -149,14 +156,25 @@ export function ImageLightbox({
 					<p className="text-sm">
 						{currentIndex + 1} / {images.length}
 					</p>
-					<button
-						type="button"
-						onClick={onClose}
-						className="inline-flex size-10 items-center justify-center rounded-full bg-white/10 outline-none hover:bg-white/18 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
-						aria-label="关闭图片预览"
-					>
-						<RiCloseLargeLine className="size-5" />
-					</button>
+					<div className="flex items-center gap-2">
+						{actionHref ? (
+							<Link
+								href={actionHref}
+								className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white outline-none hover:bg-white/16"
+							>
+								<RiArticleLine className="size-4" />
+								{actionLabel}
+							</Link>
+						) : null}
+						<button
+							type="button"
+							onClick={onClose}
+							className="inline-flex size-10 items-center justify-center rounded-full bg-white/10 outline-none hover:bg-white/18 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+							aria-label="关闭图片预览"
+						>
+							<RiCloseLargeLine className="size-5" />
+						</button>
+					</div>
 				</div>
 
 				<div className="pointer-events-none flex min-h-0 flex-1 items-center justify-center gap-3">
@@ -239,7 +257,7 @@ export function ImageLightbox({
 				</div>
 
 				<div className="pointer-events-none min-h-6 pt-2 text-center text-sm text-white/75">
-					{currentImage.title || currentImage.alt || ""}
+					<div>{currentImage.title || currentImage.alt || ""}</div>
 				</div>
 			</div>
 		</div>,

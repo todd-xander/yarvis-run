@@ -5,10 +5,12 @@ import matter from "gray-matter";
 import path from "node:path";
 import type {
 	CatalogDimension,
+	ListlikeLayout,
 	MenuGroup,
 	MenuItem,
 	SiteConfig,
 	SortConfig,
+	PaginationConfig,
 } from "@/lib/content-types";
 import {
 	APP_COPYRIGHT,
@@ -54,18 +56,24 @@ export function resolveContentUrl(relPath: string): string {
 }
 const shouldCacheContent = process.env.NODE_ENV === "production";
 
-export type SectionMeta = {
-	name: string;
+export type SectionEntry = {
+	slug: string;
 	route: string;
-	layout: string;
+	layout: ListlikeLayout;
 	title: string;
+	description?: string;
 	cover?: string;
 	sort?: SortConfig;
+	pagination?: PaginationConfig;
 	dimensions?: CatalogDimension[];
 };
 
 let cachedConfig: SiteConfig | undefined;
-let cachedSections: SectionMeta[] | undefined;
+let cachedSections: SectionEntry[] | undefined;
+
+function isSectionLayout(layout: string): layout is ListlikeLayout {
+	return layout === "feed" || layout === "list" || layout === "card" || layout === "catalog";
+}
 
 function loadSiteConfig(): SiteConfig {
 	const mergeMenu = (defaults: MenuItem[], configured: MenuItem[]): MenuItem[] => {
@@ -137,34 +145,35 @@ export function getMenuLabel(key: string, fallback?: string): string {
 	return menuItem?.label || fallback || key;
 }
 
-function loadAllSections(): SectionMeta[] {
+function loadAllSections(): SectionEntry[] {
 	if (!fs.existsSync(CONTENT_ROOT)) return [];
 
 	return fs
 		.readdirSync(CONTENT_ROOT, { withFileTypes: true })
 		.filter((entry) => entry.isDirectory())
-		.map((entry): SectionMeta | undefined => {
+		.map((entry): SectionEntry | undefined => {
 			const indexPath = getSectionIndexPath(CONTENT_ROOT, entry.name);
 			if (!fs.existsSync(indexPath)) return undefined;
 			const fm = parseContent(indexPath).frontmatter;
+			if (!isSectionLayout(fm.layout)) return undefined;
 
-			const section: SectionMeta = {
-				name: entry.name,
+			const section: SectionEntry = {
+				slug: entry.name,
 				route: entry.name,
 				layout: fm.layout,
 				title: fm.title || entry.name,
+				description: fm.description || undefined,
 				cover: fm.cover || undefined,
-				sort: fm.layout === "card" || fm.layout === "list" ? fm.sort : undefined,
+				sort: fm.layout === "card" || fm.layout === "list" || fm.layout === "feed" ? fm.sort : undefined,
+				pagination: fm.layout === "card" || fm.layout === "feed" || fm.layout === "list" ? fm.pagination : undefined,
+				dimensions: fm.layout === "catalog" ? fm.dimensions : undefined,
 			};
-			if (fm.layout === "catalog" && fm.dimensions && fm.dimensions.length > 0) {
-				section.dimensions = fm.dimensions;
-			}
 			return section;
 		})
-		.filter((section): section is SectionMeta => section !== undefined);
+		.filter((section): section is SectionEntry => section !== undefined);
 }
 
-export function discoverAllSections(): SectionMeta[] {
+export function discoverAllSections(): SectionEntry[] {
 	if (!shouldCacheContent) return loadAllSections();
 	if (!cachedSections) cachedSections = loadAllSections();
 	return cachedSections;

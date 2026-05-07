@@ -8,6 +8,12 @@ import { Streamdown, defaultRemarkPlugins } from "streamdown";
 import { ImageLightbox } from "@/components/image-lightbox";
 import type { PostImage } from "@/lib/content-types";
 
+const HEADING_ID_PREFIX = "user-content-";
+
+function stripUserContentPrefix(value: string) {
+	return value.startsWith(HEADING_ID_PREFIX) ? value.slice(HEADING_ID_PREFIX.length) : value;
+}
+
 function MarkdownLink({
 	children,
 	href,
@@ -54,6 +60,36 @@ export function PostMarkdown({ content }: { content: string }) {
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container) return;
+
+		const idNodes = container.querySelectorAll<HTMLElement>("[id]");
+		for (const node of idNodes) {
+			node.id = stripUserContentPrefix(node.id);
+		}
+
+		const internalLinks = container.querySelectorAll<HTMLAnchorElement>("a[href^=\"#user-content-\"]");
+		for (const link of internalLinks) {
+			const href = link.getAttribute("href");
+			if (!href) continue;
+			link.setAttribute("href", `#${stripUserContentPrefix(href.slice(1))}`);
+		}
+
+		const describedByNodes = container.querySelectorAll<HTMLElement>("[aria-describedby]");
+		for (const node of describedByNodes) {
+			const describedBy = node.getAttribute("aria-describedby");
+			if (!describedBy) continue;
+			node.setAttribute("aria-describedby", stripUserContentPrefix(describedBy));
+		}
+
+		const hash = window.location.hash;
+		if (hash) {
+			const normalizedHash = stripUserContentPrefix(decodeURIComponent(hash.slice(1)));
+			const target = document.getElementById(normalizedHash);
+			if (target) {
+				requestAnimationFrame(() => {
+					target.scrollIntoView();
+				});
+			}
+		}
 
 		const handleClick = (event: MouseEvent) => {
 			const target = event.target;

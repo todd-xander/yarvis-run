@@ -1,19 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { GradientShadowText } from "@/components/ui/gradient-shadow-text";
-import type { DimensionItem } from "@/lib/content-types";
+import type { AvatarAuthor } from "@/lib/content-types";
 
 type AvatarSize = "md" | "lg" | "xl";
 type AvatarShape = "square" | "circle";
 
-const sizeMap: Record<AvatarSize, { dim: string; fontSize: string }> = {
-	md: { dim: "size-11", fontSize: "text-lg" },
-	lg: { dim: "size-20", fontSize: "text-4xl" },
-	xl: { dim: "size-40", fontSize: "text-2xl" },
+const sizeMap: Record<AvatarSize, { dim: string; fontSize: string; iconSize: string }> = {
+	md: { dim: "size-12", fontSize: "text-2xl", iconSize: "size-8" },
+	lg: { dim: "size-20", fontSize: "text-4xl", iconSize: "size-12" },
+	xl: { dim: "size-40", fontSize: "text-8xl", iconSize: "size-32" },
 };
 
 type AvatarProps = {
-	author: DimensionItem;
+	author: AvatarAuthor;
 	size?: AvatarSize;
 	shape?: AvatarShape;
 	href?: string;
@@ -23,6 +23,25 @@ type AvatarProps = {
 	onFocus?: () => void;
 	onBlur?: () => void;
 };
+
+function getAuthorIcon(
+	author: AvatarAuthor,
+	avatarClassName: string,
+) {
+	if (author.avatar) {
+		return (
+			<Image
+				src={author.avatar}
+				alt={author.title}
+				width={64}
+				height={64}
+				className={avatarClassName}
+			/>
+		);
+	}
+
+	return author.title.charAt(0).toUpperCase();
+}
 
 export function AuthorAvatar({
 	author,
@@ -35,22 +54,17 @@ export function AuthorAvatar({
 	onFocus,
 	onBlur,
 }: AvatarProps) {
-	const initials = author.name.charAt(0).toUpperCase();
 	const { dim, fontSize } = sizeMap[size];
+	const avatarClassName = `shrink-0 ${shape === "circle" ? "rounded-full" : "rounded-lg"} object-cover border border-border/40 ${dim} ${className}`.trim();
+	const icon = getAuthorIcon(author, avatarClassName);
 
 	const content = author.avatar ? (
-		<Image
-			src={author.avatar}
-			alt={author.name}
-			width={64}
-			height={64}
-			className={`shrink-0 ${shape === "circle" ? "rounded-full" : "rounded-lg"} object-cover border border-border/40 ${dim} ${className}`.trim()}
-		/>
+		icon
 	) : (
 		<span
 			className={`inline-flex shrink-0 items-center justify-center ${shape === "circle" ? "rounded-full" : "rounded-lg"} bg-bg-jike-yellow ${dim} ${className}`.trim()}
 		>
-			<GradientShadowText fontSize={fontSize}>{initials}</GradientShadowText>
+			<GradientShadowText fontSize={fontSize}>{icon}</GradientShadowText>
 		</span>
 	);
 
@@ -61,7 +75,7 @@ export function AuthorAvatar({
 	return (
 		<Link
 			href={href}
-			className={`inline-flex`}
+			className={`inline-flex ${shape === "circle" ? "rounded-full" : "rounded-lg"} `}
 			onMouseEnter={onMouseEnter}
 			onMouseLeave={onMouseLeave}
 			onFocus={onFocus}

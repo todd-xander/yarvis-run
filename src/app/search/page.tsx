@@ -1,15 +1,18 @@
 import { SearchPageClient } from "@/components/search-page-client";
-import { PageTopBar } from "@/components/page-top-bar";
-import { listSearchablePosts } from "@/lib/content-repository";
-import { getDimensionRoutesMap, getMenuLabel } from "@/lib/site-config";
+import { CONTENT_DIMENSIONS } from "@/lib/content-constants";
+import { listDimensionItemsWithCounts, listSearchablePosts } from "@/lib/content-repository";
+import { getDimensionRoutesMap } from "@/lib/site-config";
 
 export default function SearchPage() {
+	const dimRoutes = getDimensionRoutesMap();
+
 	return (
 		<section className="layout-content">
-			<PageTopBar title={getMenuLabel("search", "搜索")} />
 			<SearchPageClient
 				posts={listSearchablePosts()}
-				dimRoutes={getDimensionRoutesMap()}
+				categoryItems={listDimensionItemsWithCounts(CONTENT_DIMENSIONS.category)}
+				categoryBasePath={dimRoutes[CONTENT_DIMENSIONS.category] || CONTENT_DIMENSIONS.category}
+				dimRoutes={dimRoutes}
 			/>
 		</section>
 	);
